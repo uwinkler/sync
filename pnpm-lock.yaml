@@ -7,6 +7,7 @@ specifiers:
   mongodb: ^4.12.1
   nodemon: ^2.0.20
   npm-run-all: ^4.1.5
+  rxjs: ^7.8.0
   ts-node: ^10.9.1
   typescript: ^4.9.4
 
@@ -17,6 +18,7 @@ dependencies:
   mongodb: 4.12.1
   nodemon: 2.0.20
   npm-run-all: 4.1.5
+  rxjs: 7.8.0
   ts-node: 10.9.1_ewfw2lwfc3dwdvz7r6yz2ssqyi
   typescript: 4.9.4
 
@@ -3352,6 +3354,12 @@ packages:
       supports-preserve-symlinks-flag: 1.0.0
     dev: false
 
+  /rxjs/7.8.0:
+    resolution: {integrity: sha512-F2+gxDshqmIub1KdvZkaEfGDwLNpPvk9Fs6LD/MyQxNgMds/WH9OdDDXOmxUZpME+iSK3rQCctkL0DYyytUqMg==}
+    dependencies:
+      tslib: 2.4.1
+    dev: false
+
   /safe-regex-test/1.0.0:
     resolution: {integrity: sha512-JBUUzyOgEwXQY1NuPtvcj/qcBDbDmEvWufhlnXZIm75DEHp+afM1r1ujJpJsV/gSM4t59tpDyPi1sd6ZaPFfsA==}
     dependencies:
@@ -3691,7 +3699,6 @@ packages:
   /tslib/2.4.1:
     resolution: {integrity: sha512-tGyy4dAjRIEwI7BzsB0lynWgOpfqjUdq91XXAlIWD2OwKBH7oCl/GZG/HT4BOHrTlPMOASlMQ7veyTqpmRcrNA==}
     dev: false
-    optional: true
 
   /type-detect/4.0.8:
     resolution: {integrity: sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==}
