@@ -61,7 +61,6 @@ async function storeFile(
     return `file://${dest}`
   } catch (err) {
     log.error('🚨 storeFile', err)
-    throw err
   }
 }
 
@@ -92,8 +91,8 @@ async function restoreFile(
     throw new Error(`File ${pathRel} not found in storage`)
   }
   try {
-    const time = Number(version)
-    log.info('restoreFile', version, src, dest, version, time)
+    const time = new Date(Number(version))
+    log.info('restoreFile', version, src, dest, time)
     await mkDir(path.dirname(dest))
     debugger
     await fsCopyFile(src, dest, fs.constants.COPYFILE_FICLONE)

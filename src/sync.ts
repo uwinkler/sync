@@ -5,6 +5,7 @@ import { Storage } from './storage/storage.types'
 import { PathAbsolute } from './types'
 import { fsExists, fsStat, fsUnlink } from './utils-fs'
 import { logger } from './utils/logger'
+import { floor } from './utils/floor'
 
 const log = logger(__filename)
 
@@ -25,22 +26,28 @@ export function sync(props: {
         scan((acc) => acc + 1, 0),
         debounceTime(200)
       )
-      .subscribe((acc) => log.info(`Checked ${acc} files...`))
+      .subscribe((acc) => log.info(`Checked total ${acc} files so far ...`))
 
     files$.subscribe(async (nodeInfo) => {
       const { path: p, deleted, mtime } = nodeInfo
       const destPathAbsolute = path.join(props.pathToWatch, p)
       const fileExists = await fsExists(destPathAbsolute)
-      if (!fileExists) {
-        log.info('syncAllFiles: file does not exist', destPathAbsolute)
+      if (!fileExists && nodeInfo.deleted) {
+        return
+      }
+      if (!fileExists && !nodeInfo.deleted) {
+        log.info(
+          'syncAllFiles: file does not exist, but is not marked as deleted',
+          destPathAbsolute
+        )
         return restoreFile()
       }
 
       const stats = await fsStat(destPathAbsolute)
+      const fileMtime = floor(stats.mtimeMs)
 
       if (!stats.isFile()) {
-        log.error('syncAllFiles: not a file', destPathAbsolute)
-        return
+        return log.error('syncAllFiles: not a file', destPathAbsolute)
       }
 
       if (deleted) {
@@ -51,16 +58,19 @@ export function sync(props: {
         return await fsUnlink(destPathAbsolute)
       }
 
-      if (stats.mtimeMs < mtime) {
+      if (fileMtime < mtime) {
         log.info('syncAllFiles: file older than db', destPathAbsolute)
         await fsUnlink(destPathAbsolute)
         await restoreFile()
-      }
-
-      if (stats.mtimeMs > mtime) {
-        log.info('syncAllFiles: file newer than db', destPathAbsolute)
         return
       }
+
+      if (fileMtime > mtime) {
+        // This case should be handled by the watcher
+        return log.info('syncAllFiles: file newer than db', destPathAbsolute)
+      }
+
+      return // file up to date
 
       async function restoreFile() {
         log.info('restoreFile', destPathAbsolute)

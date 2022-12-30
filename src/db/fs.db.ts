@@ -1,7 +1,8 @@
+import chokidar from 'chokidar'
 import fs from 'fs'
 import path from 'path'
 import { ReplaySubject } from 'rxjs'
-import { NodeInfo, PathAbsolute, PathRelative } from '../types'
+import { NodeInfo, PathRelative } from '../types'
 import { fsExists, mkDir } from '../utils-fs'
 import { chunk } from '../utils/fileHash'
 import { logger } from '../utils/logger'
@@ -16,7 +17,9 @@ export const fsDb: DatabaseFactory<{
 }> = (props) => {
   const { pathToStore } = props
   const files$ = new ReplaySubject<NodeInfo>()
-  listAllFiles(pathToStore)
+  const map = new Map<string, NodeInfo[]>()
+
+  init()
 
   return {
     putInfo: async ({ path, nodeInfo }) => {
@@ -57,9 +60,12 @@ export const fsDb: DatabaseFactory<{
     }
   }
 
-  async function listAllFiles(pathToStore: PathAbsolute) {
-    const map = new Map<string, NodeInfo[]>()
+  async function init() {
+    await listAllFiles()
+    await initFileWatcher()
+  }
 
+  async function listAllFiles() {
     await reader(pathToStore)
 
     Array.from(map.values()).forEach((infos) => {
@@ -86,5 +92,31 @@ export const fsDb: DatabaseFactory<{
         }
       })
     }
+  }
+
+  function initFileWatcher() {
+    chokidar
+      .watch(pathToStore, {
+        alwaysStat: false,
+        useFsEvents: true,
+        awaitWriteFinish: { stabilityThreshold: 0 },
+        ignoreInitial: true
+      })
+      .on('add', (file) => {
+        if (file.endsWith('.json')) {
+          const data = fs.readFileSync(file)
+          const fileContent: NodeInfoJson = JSON.parse(data.toString())
+          const currentInfos = map.get(fileContent.path) || []
+          const nextInfos = [...currentInfos, fileContent.nodeInfo].sort(
+            (a, b) => a.mtime - b.mtime
+          )
+          log.debug('initFileWatcher: add', nextInfos)
+          map.set(fileContent.path, nextInfos)
+          const lastNodeInfo = nextInfos.at(-1)
+          if (lastNodeInfo) {
+            files$.next(lastNodeInfo)
+          }
+        }
+      })
   }
 }

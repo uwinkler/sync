@@ -8,6 +8,9 @@ export type DatabaseFactory<T> = (config: T) => {
   // Gets information about a file or directory
   getInfo(props: { path: PathRelative }): Promise<NodeInfo[]>
 
+  // Has file
+  hasFile(props: { path: PathRelative; mtime: number }): Promise<boolean>
+
   // Returns a Subject of changes to a file or directory
   watch(): Subject<NodeInfo>
 }

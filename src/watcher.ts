@@ -7,6 +7,7 @@ import { Database } from './db/db.types'
 import { Storage } from './storage/storage.types'
 import { FileEvent, NodeInfo, PathAbsolute } from './types'
 import { isFile, normalizePath } from './utils-fs'
+import { floor } from './utils/floor'
 import { logger } from './utils/logger'
 export const log = logger(__filename)
 
@@ -38,7 +39,7 @@ export function watcher(props: {
     const stats = await fsStat(path)
     return {
       path: normalizePath(path, props.pathToWatch),
-      mtime: stats.mtimeMs,
+      mtime: floor(stats.mtimeMs),
       deleted: false,
       type: stats.isFile() ? 'file' : 'dir'
     }
@@ -51,20 +52,30 @@ export function watcher(props: {
     }
     const pathRel = normalizePath(src, props.pathToWatch)
     const info = await nodeInfo(src)
-    const hasFile = await storage.hasFile({
+
+    const dbHasFile = await db.hasFile({
+      path: pathRel,
+      mtime: info.mtime
+    })
+
+    if (!dbHasFile) {
+      db.putInfo({ path: pathRel, nodeInfo: info })
+    }
+
+    // Check if storage has file
+    const storageHasFile = await storage.hasFile({
       path: pathRel,
       version: '' + info.mtime
     })
 
-    if (!hasFile) {
+    if (!storageHasFile) {
       log.info('copyFile', src)
+      debugger
       await storage.storeFile({
         root: props.pathToWatch,
         path: pathRel,
         version: '' + info.mtime
       })
-
-      await db.putInfo({ path: pathRel, nodeInfo: info })
     }
   }
 
@@ -73,6 +84,7 @@ export function watcher(props: {
       path === props.pathToWatch ||
       path.endsWith('.tmp') ||
       path.endsWith('.swp') ||
+      /\.DS_Store$/.test(path) ||
       /\.cache\$/.test(path) ||
       /\.git\$/.test(path) ||
       /\.git\/.*/.test(path) ||
@@ -94,7 +106,6 @@ export function watcher(props: {
 
   const cleanSource = eventSource.pipe(filter((ev) => !ignoreFile(ev.path)))
 
-  // Log all events
   cleanSource.subscribe((event) =>
     log.debug('event:', event.event, '->', event.path)
   )
@@ -113,17 +124,6 @@ export function watcher(props: {
   cleanSource.pipe(filter((ev) => ev.event === 'unlink')).subscribe((ev) => {
     unlinkFile(ev.path)
   })
-
-  // Copy directories entries
-  // cleanSource
-  //   .pipe(
-  //     filter((ev) => ev.event === 'addDir'),
-  //     filter((ev) => !!ev.stats),
-  //     filter((ev) => ev.stats.isDirectory())
-  //   )
-  //   .subscribe((_ev) => {
-  //     // copyDir(ev.path)
-  //   })
 
   return { watch }
 }
