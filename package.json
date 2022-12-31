@@ -13,6 +13,8 @@
     "nodemon": "^2.0.20",
     "npm-run-all": "^4.1.5",
     "rxjs": "^7.8.0",
+    "socket.io": "^4.5.4",
+    "socket.io-client": "^4.5.4",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.4"
   },
@@ -25,6 +27,7 @@
   "scripts": {
     "build:tsc-watch": "tsc -w",
     "build:nodemon": "nodemon build/index.js",
+    "server": "nodemon build/server/server.js",
     "nodemon2": "nodemon build/index.js -p /tmp/sync2",
     "start": "npm-run-all -p build:*",
     "test": "jest"

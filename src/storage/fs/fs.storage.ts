@@ -48,6 +48,7 @@ async function storeFile(
     log.debug('📂 storeFile: creating dir', destDir, '')
     await mkDir(destDir)
   }
+
   const src = path.join(root, pathRel)
 
   if (await fsExists(dest)) {
@@ -61,6 +62,7 @@ async function storeFile(
     return `file://${dest}`
   } catch (err) {
     log.error('🚨 storeFile', err)
+    throw err
   }
 }
 

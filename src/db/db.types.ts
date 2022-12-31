@@ -13,6 +13,9 @@ export type DatabaseFactory<T> = (config: T) => {
 
   // Returns a Subject of changes to a file or directory
   watch(): Subject<NodeInfo>
+
+  // Returns all files in the database
+  allFiles(): Promise<{ path: string; nodeInfos: NodeInfo[] }[]>
 }
 
 export type Database<T> = ReturnType<DatabaseFactory<T>>

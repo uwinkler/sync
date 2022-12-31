@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import { filter, from, mergeMap, Subject } from 'rxjs'
 import { promisify } from 'util'
 import { Database } from './db/db.types'
+import { publishFile } from './storage-network/emit-file'
 import { Storage } from './storage/storage.types'
 import { FileEvent, NodeInfo, PathAbsolute } from './types'
 import { isFile, normalizePath } from './utils-fs'
@@ -60,6 +61,7 @@ export function watcher(props: {
 
     if (!dbHasFile) {
       db.putInfo({ path: pathRel, nodeInfo: info })
+      publishFile({ path: pathRel, mtime: info.mtime, src })
     }
 
     // Check if storage has file
@@ -70,7 +72,7 @@ export function watcher(props: {
 
     if (!storageHasFile) {
       log.info('copyFile', src)
-      debugger
+
       await storage.storeFile({
         root: props.pathToWatch,
         path: pathRel,

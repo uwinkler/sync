@@ -9,7 +9,7 @@ import { floor } from './utils/floor'
 
 const log = logger(__filename)
 
-export function sync(props: {
+export function syncFs(props: {
   pathToWatch: PathAbsolute
   pathToStore: PathAbsolute
   db: Database<unknown>
@@ -18,8 +18,6 @@ export function sync(props: {
   const files$ = props.db.watch()
 
   async function syncAllFiles() {
-    log.info('start')
-
     // Count files
     files$
       .pipe(

@@ -22,6 +22,10 @@ export const fsDb: DatabaseFactory<{
   init()
 
   return {
+    allFiles: async () => {
+      return []
+    },
+
     putInfo: async ({ path, nodeInfo }) => {
       if (nodeInfo.type === 'dir') {
         return
@@ -54,6 +58,15 @@ export const fsDb: DatabaseFactory<{
       })
     },
     getInfo: async () => [],
+
+    hasFile: async (props) => {
+      const { dest } = chunk({
+        pathToStore,
+        pathRel: props.path,
+        version: '' + props.mtime
+      })
+      return await fsExists(dest)
+    },
 
     watch: () => {
       return files$

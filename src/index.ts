@@ -3,10 +3,10 @@ import path from 'path'
 import { Subject } from 'rxjs'
 import { Database } from './db/db.types'
 // import { fsDb } from './db/fs.db'
-import { levelDb } from './db/level.db'
+import { jsonDb } from './db/json.db'
 import { fsStore } from './storage/fs/fs.storage'
 import type { Storage } from './storage/storage.types'
-import { sync } from './sync'
+import { syncFs } from './sync-fs'
 import type { FileEvent } from './types'
 import { mkDir } from './utils-fs'
 import { logger } from './utils/logger'
@@ -40,7 +40,7 @@ const CONTEXT: Context = {
   pathToStore: path.normalize(opts.storage),
   pathToWatch: path.normalize(opts.path),
   storage: fsStore({ pathToStore }),
-  db: levelDb({ pathToStorage: path.join(pathToStore, 'db.json') })
+  db: jsonDb({ pathToStorage: path.join(pathToStore, 'db.json') })
 }
 
 log.debug('Context', {
@@ -48,7 +48,7 @@ log.debug('Context', {
   pathToWatch: CONTEXT.pathToWatch
 })
 
-const { syncAllFiles } = sync(CONTEXT)
+const { syncAllFiles } = syncFs(CONTEXT)
 const { watch } = watcher(CONTEXT)
 
 async function main() {
