@@ -1,4 +1,4 @@
-import { PublishFile } from '../storage-network/storage-network'
+import { PublishFile } from '../socket-client/socket-client'
 import { logger } from '../utils/logger'
 import { Controller } from './controller.type'
 

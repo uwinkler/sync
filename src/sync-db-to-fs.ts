@@ -9,7 +9,9 @@ import { floor } from './utils/floor'
 
 const log = logger(__filename)
 
-export function syncFs(props: {
+// Watches the database and syncs the files to the filesystem
+//
+export function syncDbToFs(props: {
   pathToWatch: PathAbsolute
   pathToStore: PathAbsolute
   db: Database<unknown>

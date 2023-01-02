@@ -1,18 +1,18 @@
 import { bufferTime, filter, map } from 'rxjs'
 import { Database } from './db/db.types'
-import { StorageNetwork } from './storage-network/storage-network'
+import { SocketClient } from './socket-client/socket-client'
 import { logger } from './utils/logger'
 import { Storage } from './storage/storage.types'
 const log = logger(__filename)
 
 type Props = {
-  storageNetwork: StorageNetwork
+  socketClient: SocketClient
   db: Database<unknown>
   storage: Storage<unknown>
 }
 
 export function syncNetwork(props: Props) {
-  const { db, storageNetwork, storage } = props
+  const { db, socketClient, storage } = props
 
   return {
     syncWithNetwork() {
@@ -35,12 +35,12 @@ export function syncNetwork(props: Props) {
         const files = events
           .filter((e) => !e.deleted)
           .map((e) => ({ path: e.path, mtime: e.mtime }))
-        storageNetwork.publishFileList(files)
+        socketClient.publishFileList(files)
       })
   }
 
   function handleRequestFiles() {
-    storageNetwork
+    socketClient
       .watch<{ missingVersions: { path: string; mtime: number }[] }>(
         'request_files'
       )
@@ -49,7 +49,7 @@ export function syncNetwork(props: Props) {
         msg.payload.missingVersions.forEach((missingVersion) => {
           const { path, mtime } = missingVersion
           storage.getFile({ path, version: '' + mtime }).then((data) => {
-            storageNetwork.publishFile({ path, mtime, data })
+            socketClient.publishFile({ path, mtime, data })
           })
         })
       })

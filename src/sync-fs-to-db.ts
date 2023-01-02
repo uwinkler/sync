@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import { filter, from, mergeMap, Subject } from 'rxjs'
 import { promisify } from 'util'
 import type { Database } from './db/db.types'
-import type { StorageNetwork } from './storage-network/storage-network'
+import type { SocketClient } from './socket-client/socket-client'
 import type { Storage } from './storage/storage.types'
 import type { FileEvent, NodeInfo, PathAbsolute } from './types'
 import { isFile, normalizePath } from './utils-fs'
@@ -15,14 +15,15 @@ export const log = logger(__filename)
 const fsStat = promisify(fs.stat)
 export const fsExists = promisify(fs.exists)
 
-export function watcher(props: {
+// Watches the filesystem and syncs the files to the database
+export function syncFsToDb(props: {
   eventSource: Subject<FileEvent>
   pathToWatch: PathAbsolute
   storage: Storage<unknown>
   db: Database<unknown>
-  storageNetwork: StorageNetwork
+  socketClient: SocketClient
 }) {
-  const { eventSource, storage, db, storageNetwork } = props
+  const { eventSource, storage, db } = props
 
   function watch() {
     log.debug('startWatcher')
@@ -62,7 +63,6 @@ export function watcher(props: {
 
     if (!dbHasFile) {
       db.putInfo({ path: pathRel, nodeInfo: info })
-      storageNetwork.publishFile({ path: pathRel, mtime: info.mtime, src })
     }
 
     // Check if storage has file
