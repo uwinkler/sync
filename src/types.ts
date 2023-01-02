@@ -37,8 +37,14 @@ export type NodeInfo = {
   mtime: number
 }
 
+export type NodeInfoVersions = {
+  path: string
+  versions: NodeInfo[]
+}
+
 export type Config = {
   path: string
+  server: string
 }
 
 export type PathAbsolute = string

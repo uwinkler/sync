@@ -18,11 +18,17 @@ export const fsStore: StorageFactory<{ pathToStore: string }> = (config) => {
     async storeFile({ root, path, version }) {
       return await storeFile(pathToStore, root, path, version)
     },
+    async storeBuffer({ path, version, data }) {
+      return await storeBuffer({ pathToStore, pathRel: path, version, data })
+    },
     async hasFile({ path, version }) {
       return await hasFile({ pathToStore: pathToStore, pathRel: path, version })
     },
     async restoreFile({ path, root, version }) {
       return await restoreFile(pathToStore, root, path, version)
+    },
+    async getFile({ path, version }) {
+      return await getFile({ pathToStore: pathToStore, pathRel: path, version })
     }
   }
 }
@@ -39,8 +45,8 @@ async function storeFile(
   pathToStore: PathAbsolute,
   root: PathAbsolute,
   pathRel: PathRelative,
-  version: string
-): Promise<Url> {
+  version: Version
+) {
   log.debug('➡️  storeFile:', pathRel, version)
   const { destDir, dest } = chunk({ pathToStore, pathRel, version })
 
@@ -53,18 +59,46 @@ async function storeFile(
 
   if (await fsExists(dest)) {
     log.debug(`😑 storeFile: file ${dest} exists, ignoring`)
-    return `file://${dest}`
   }
 
   try {
     log.debug(`📄 storeFile: copying ${src} to ${dest}`)
     await fsCopyFile(src, dest, fs.constants.COPYFILE_FICLONE)
-    return `file://${dest}`
   } catch (err) {
     log.error('🚨 storeFile', err)
     throw err
   }
 }
+
+async function storeBuffer(props: {
+  pathToStore: PathAbsolute
+  pathRel: PathRelative
+  version: Version
+  data: Buffer
+}) {
+  try {
+    const { pathToStore, pathRel, version, data } = props
+    log.debug('➡️  storeBuffer:', pathRel, version)
+    const { destDir, dest } = chunk({ pathToStore, pathRel, version })
+
+    if (!(await isDir(destDir))) {
+      log.debug('📂 storeFile: creating dir', destDir, '')
+      await mkDir(destDir)
+    }
+
+    if (await fsExists(dest)) {
+      log.debug(`😑 storeBuffer: file ${dest} exists, ignoring`)
+      return `file://${dest}`
+    }
+
+    return fs.promises.writeFile(dest, data)
+  } catch (err) {
+    log.error('🚨 storeBuffer', err)
+    throw err
+  }
+}
+
+//
 
 async function hasFile({
   pathToStore,
@@ -105,7 +139,16 @@ async function restoreFile(
   }
 }
 
-//
+async function getFile(props: {
+  pathToStore: PathAbsolute
+  pathRel: PathRelative
+  version: Version
+}) {
+  const { pathToStore, pathRel, version } = props
+  const { dest } = chunk({ pathToStore, pathRel, version: '' + version })
+  return await fs.promises.readFile(dest)
+}
+
 // Helpers
 //
 function chunk({

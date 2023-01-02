@@ -1,4 +1,4 @@
-import type { Ok, PathAbsolute, PathRelative, Url, Version } from '../types'
+import type { Ok, PathAbsolute, PathRelative, Version } from '../types'
 
 export type StorageFactory<T> = (config: T) => {
   //
@@ -14,8 +14,14 @@ export type StorageFactory<T> = (config: T) => {
   storeFile(props: {
     root: PathAbsolute
     path: PathRelative
-    version: string
-  }): Promise<Url>
+    version: Version
+  }): Promise<any>
+
+  storeBuffer(props: {
+    path: PathRelative
+    version: Version
+    data: Buffer
+  }): Promise<any>
 
   // Check if a file exists in storage
   // path: the path of the file to be checked
@@ -31,6 +37,9 @@ export type StorageFactory<T> = (config: T) => {
     path: PathRelative
     version: Version
   }): Promise<void>
+
+  // Get a file from storage
+  getFile(props: { path: PathRelative; version: Version }): Promise<Buffer>
 }
 
 export type Storage<T> = ReturnType<StorageFactory<T>>

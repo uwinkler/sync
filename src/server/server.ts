@@ -1,77 +1,63 @@
+import { filter, Observable, share, Subject } from 'rxjs'
 import { Server } from 'socket.io'
-import { NodeInfo } from '../types'
+import { jsonDb } from '../db/json.db'
+import { fsStore } from '../storage/fs/fs.storage'
 import { logger } from '../utils/logger'
-import fs from 'fs'
-import { merge } from '../utils/merge'
+import { ControllerCtx, Message } from './controller.type'
+import { publishFileList } from './publish-file-list.ctrl'
+import { updateFromClient } from './update-from-client.ctrl'
+import { upload } from './upload.ctrl'
 
-const SERVER_DB = '/tmp/sync_files/server_db.json'
+const SERVER_DB = '/tmp/sync_server/server_db.json'
 
 const log = logger(__filename)
-const map = readMapFromFile(SERVER_DB)
+const db = jsonDb({ pathToStorage: SERVER_DB })
 const io = new Server({})
+const storage = fsStore({ pathToStore: '/tmp/sync_server' })
+const messages = new Subject<Message<any>>()
+
+function watch<T>(messageType: string): Observable<Message<T>> {
+  return messages.pipe(
+    filter((msg) => msg.event === messageType),
+    share()
+  ) as Observable<Message<T>>
+}
 
 function init() {
-  io.on('connection', (socket) => {
-    socket.on(
-      'update-from-client',
-      (msg: { path: string; nodeInfos: NodeInfo[] }) => {
-        log.debug('update-from-client', msg.path)
-        const serverNodeInfos = map.get(msg.path) || []
-        const nextNodeInfo = merge(serverNodeInfos, msg.nodeInfos)
-        writeMapToFile(map, SERVER_DB)
-        log.debug('update-from-server:', msg.path, nextNodeInfo)
-        io.emit('update-from-server', {
-          path: msg.path,
-          nodeInfos: nextNodeInfo
-        })
-      }
-    )
-  })
+  const ctx: ControllerCtx = {
+    db,
+    io,
+    watch,
+    storage
+  }
 
-  io.of('/storage-network').on('connection', (socket) => {
-    log.debug('init: storage-network connected')
-    socket.on('publish_file', (props, file) => {
-      log.debug('publish_file', props, file)
+  debugMessages()
+  publishFileList(ctx)
+  upload(ctx)
+  updateFromClient(ctx)
+  initIo()
+}
+
+function debugMessages() {
+  messages.pipe(share()).subscribe((msg) => {
+    log.debug('message', JSON.stringify(msg, null, 2))
+  })
+}
+
+function initIo() {
+  io.on('connection', (socket) => {
+    log.debug('New connection', socket.id)
+    socket.onAny((eventName, ...args) => {
+      if (args.length === 1) {
+        messages.next({ event: eventName, payload: args[0], source: socket.id })
+      } else {
+        messages.next({ event: eventName, payload: args, source: socket.id })
+      }
     })
   })
 
-  log.info('init: Server started on port 3000')
   io.listen(3000)
+  log.info('init: Server started on port 3000')
 }
 
 init()
-
-function readMapFromFile(pathToStorage: string) {
-  const map = new Map<string, NodeInfo[]>()
-  log.debug('init: pathToStorage', pathToStorage)
-  if (!fs.existsSync(pathToStorage)) {
-    fs.writeFileSync(pathToStorage, JSON.stringify({}))
-  }
-
-  const dbJson: { [path: string]: NodeInfo[] } = JSON.parse(
-    fs.readFileSync(pathToStorage, 'utf-8').toString()
-  )
-  Object.entries(dbJson).forEach(([path, nodeInfo]) => {
-    map.set(path, nodeInfo)
-  })
-
-  return map
-}
-
-function writeMapToFile(map: Map<string, NodeInfo[]>, pathToStorage: string) {
-  const mapAsObject = Array.from(map.entries()).reduce(
-    (acc, [path, nodeInfo]) => {
-      acc[path] = nodeInfo
-      return acc
-    },
-    {} as any
-  )
-
-  log.debug('Write db to file', pathToStorage, 'nr of entries:', map.size)
-
-  fs.writeFile(pathToStorage, JSON.stringify(mapAsObject, null, 2), (err) => {
-    if (err) {
-      log.warn('error writing file', err)
-    }
-  })
-}

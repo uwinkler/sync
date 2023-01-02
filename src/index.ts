@@ -4,9 +4,14 @@ import { Subject } from 'rxjs'
 import { Database } from './db/db.types'
 // import { fsDb } from './db/fs.db'
 import { jsonDb } from './db/json.db'
+import {
+  StorageNetwork,
+  storageNetworkFactory
+} from './storage-network/storage-network'
 import { fsStore } from './storage/fs/fs.storage'
 import type { Storage } from './storage/storage.types'
 import { syncFs } from './sync-fs'
+import { syncNetwork } from './sync-network'
 import type { FileEvent } from './types'
 import { mkDir } from './utils-fs'
 import { logger } from './utils/logger'
@@ -28,11 +33,12 @@ const opts = program
 const pathToStore = path.normalize(opts.storage)
 
 type Context = {
+  db: Database<unknown>
   eventSource: Subject<FileEvent>
   pathToStore: string
   pathToWatch: string
   storage: Storage<unknown>
-  db: Database<unknown>
+  storageNetwork: StorageNetwork
 }
 
 const CONTEXT: Context = {
@@ -40,7 +46,8 @@ const CONTEXT: Context = {
   pathToStore: path.normalize(opts.storage),
   pathToWatch: path.normalize(opts.path),
   storage: fsStore({ pathToStore }),
-  db: jsonDb({ pathToStorage: path.join(pathToStore, 'db.json') })
+  db: jsonDb({ pathToStorage: path.join(pathToStore, 'db.json') }),
+  storageNetwork: storageNetworkFactory({ server: 'ws://localhost:3000' })
 }
 
 log.debug('Context', {
@@ -50,10 +57,12 @@ log.debug('Context', {
 
 const { syncAllFiles } = syncFs(CONTEXT)
 const { watch } = watcher(CONTEXT)
+const { syncWithNetwork } = syncNetwork(CONTEXT)
 
 async function main() {
   await init()
   syncAllFiles()
+  syncWithNetwork()
   watch()
 }
 

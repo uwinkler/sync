@@ -26,7 +26,12 @@ export function syncFs(props: {
       )
       .subscribe((acc) => log.info(`Checked total ${acc} files so far ...`))
 
-    files$.subscribe(async (nodeInfo) => {
+    files$.subscribe(async (nodeInfoVersion) => {
+      const nodeInfo = nodeInfoVersion.versions.at(-1)
+      if (!nodeInfo) {
+        return
+      }
+
       const { path: p, deleted, mtime } = nodeInfo
       const destPathAbsolute = path.join(props.pathToWatch, p)
       const fileExists = await fsExists(destPathAbsolute)

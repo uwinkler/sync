@@ -1,76 +1,46 @@
 import fs from 'fs'
-import { debounceTime, Subject } from 'rxjs'
-import { io } from 'socket.io-client'
-import { NodeInfo, PathRelative } from '../types'
+import { debounceTime, ReplaySubject, share, Subject } from 'rxjs'
+import { NodeInfo, NodeInfoVersions, PathRelative } from '../types'
 import { logger } from '../utils/logger'
-import { merge } from '../utils/merge'
 import { DatabaseFactory } from './db.types'
-const socket = io('ws://localhost:3000')
+
+// const socket = io('ws://localhost:3000')
 
 const log = logger(__filename)
 
-socket.on('connect', () => {
-  log.debug('Socket connected')
-})
+// socket.on('connect', () => {
+//   log.debug('Socket connected')
+// })
 
-socket.on('*', (data) => {
-  log.debug('socket.on', data)
-})
+// socket.on('*', (data) => {
+//   log.debug('socket.on', data)
+// })
 
 export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
   const { pathToStorage } = props
 
   const map = readMapFromFile(pathToStorage)
-  const file$ = new Subject<NodeInfo>()
+  const file$ = new ReplaySubject<NodeInfoVersions>()
   const writeFile = new Subject<any>()
 
   function init() {
     Array.from(map.entries()).forEach(([path, nodeInfo]) => {
-      const info = nodeInfo.at(-1)
-      sendToServer(path, nodeInfo)
-      if (info) {
-        file$.next(info)
-      }
+      // sendToServer(path, nodeInfo)
+      file$.next({ path, versions: nodeInfo })
     })
 
     writeFile.pipe(debounceTime(200)).subscribe(() => {
       writeMapToFile(map, pathToStorage)
     })
-
-    socket.on(
-      'update-from-server',
-      (data: { path: string; nodeInfos: NodeInfo[] }) => {
-        log.info('update-from-server', data)
-        receiveFromServer(data.path, data.nodeInfos)
-      }
-    )
-  }
-
-  function sendToServer(path: string, nodeInfos: NodeInfo[]) {
-    socket.emit('update-from-client', { path, nodeInfos })
-  }
-
-  function receiveFromServer(path: string, serverNodeInfos: NodeInfo[]) {
-    const myNodeInfos = map.get(path) || []
-    const nextNodeInfos = merge(myNodeInfos, serverNodeInfos)
-    const last = nextNodeInfos.at(-1)
-    const myLast = myNodeInfos.at(-1)
-    map.set(path, nextNodeInfos)
-
-    if (last && myLast && last.mtime > myLast.mtime) {
-      file$.next(last)
-    }
   }
 
   init()
 
   return {
     putInfo(props: { path: PathRelative; nodeInfo: NodeInfo }): Promise<void> {
+      
       function sendLastToWatcher(arr: NodeInfo[]) {
-        const last = arr.at(-1)
-        if (last) {
-          file$.next(last)
-        }
+        file$.next({ path: props.path, versions: arr })
       }
 
       return new Promise((resolve) => {
@@ -88,7 +58,6 @@ export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
         map.set(path, nextNodeInfoArr)
         sendLastToWatcher(nextNodeInfoArr)
         writeFile.next(void 0)
-        sendToServer(path, nextNodeInfoArr)
         resolve(void 0)
       })
     },
@@ -108,10 +77,10 @@ export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
         resolve(nodeInfos.some((info) => info.mtime === props.mtime))
       })
     },
-    //
-    // Returns a Subject of changes to a file or directory
-    watch(): Subject<NodeInfo> {
-      return file$
+
+    // Returns a Subject of changes to a file
+    watch() {
+      return file$.pipe(share())
     },
 
     //Returns all files
