@@ -35,6 +35,7 @@ export type NodeInfo = {
   path: string
   deleted: boolean
   mtime: number
+  localMtime?: number
 }
 
 export type NodeInfoVersions = {

@@ -20,15 +20,10 @@ export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
   const { pathToStorage } = props
 
   const map = readMapFromFile(pathToStorage)
-  const file$ = new ReplaySubject<NodeInfoVersions>()
+  const file$ = new Subject<NodeInfoVersions>()
   const writeFile = new Subject<any>()
 
   function init() {
-    Array.from(map.entries()).forEach(([path, nodeInfo]) => {
-      // sendToServer(path, nodeInfo)
-      file$.next({ path, versions: nodeInfo })
-    })
-
     writeFile.pipe(debounceTime(200)).subscribe(() => {
       writeMapToFile(map, pathToStorage)
     })
@@ -38,7 +33,6 @@ export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
 
   return {
     putInfo(props: { path: PathRelative; nodeInfo: NodeInfo }): Promise<void> {
-      
       function sendLastToWatcher(arr: NodeInfo[]) {
         file$.next({ path: props.path, versions: arr })
       }
@@ -81,6 +75,20 @@ export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
     // Returns a Subject of changes to a file
     watch() {
       return file$.pipe(share())
+    },
+
+    watchAll() {
+      const newSubject$ = new ReplaySubject<NodeInfoVersions>()
+
+      Array.from(map.entries()).forEach(([path, nodeInfo]) => {
+        newSubject$.next({ path, versions: nodeInfo })
+      })
+
+      file$.subscribe((nodeInfoVersions) => {
+        newSubject$.next(nodeInfoVersions)
+      })
+
+      return newSubject$.pipe(share())
     },
 
     //Returns all files

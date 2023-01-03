@@ -3,13 +3,13 @@ import fs from 'node:fs'
 
 import { filter, from, mergeMap, Subject } from 'rxjs'
 import { promisify } from 'util'
-import type { Database } from './db/db.types'
+import type { Database } from '../db/db.types'
 import type { SocketClient } from './socket-client/socket-client'
-import type { Storage } from './storage/storage.types'
-import type { FileEvent, NodeInfo, PathAbsolute } from './types'
-import { isFile, normalizePath } from './utils-fs'
-import { floor } from './utils/floor'
-import { logger } from './utils/logger'
+import type { Storage } from '../storage/storage.types'
+import type { FileEvent, NodeInfo, PathAbsolute } from '../types'
+import { isFile, normalizePath } from '../utils/utils-fs'
+import { floor } from '../utils/floor'
+import { logger } from '../utils/logger'
 export const log = logger(__filename)
 
 const fsStat = promisify(fs.stat)
@@ -56,15 +56,6 @@ export function syncFsToDb(props: {
     const pathRel = normalizePath(src, props.pathToWatch)
     const info = await nodeInfo(src)
 
-    const dbHasFile = await db.hasFile({
-      path: pathRel,
-      mtime: info.mtime
-    })
-
-    if (!dbHasFile) {
-      db.putInfo({ path: pathRel, nodeInfo: info })
-    }
-
     // Check if storage has file
     const storageHasFile = await storage.hasFile({
       path: pathRel,
@@ -79,6 +70,15 @@ export function syncFsToDb(props: {
         path: pathRel,
         version: '' + info.mtime
       })
+    }
+
+    const dbHasFile = await db.hasFile({
+      path: pathRel,
+      mtime: info.mtime
+    })
+
+    if (!dbHasFile) {
+      db.putInfo({ path: pathRel, nodeInfo: info })
     }
   }
 

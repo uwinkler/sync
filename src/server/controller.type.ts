@@ -11,4 +11,4 @@ export type ControllerCtx = {
   watch: <T>(messageType: string) => Observable<Message<T>>
 }
 
-export type Controller = (ctx: ControllerCtx) => void
+export type Controller = (ctx: ControllerCtx) => any

@@ -11,8 +11,11 @@ export type DatabaseFactory<T> = (config: T) => {
   // Has file
   hasFile(props: { path: PathRelative; mtime: number }): Promise<boolean>
 
-  // Returns a Observable of changes to a file or directory
+  // Returns a Observable of changes to a file
   watch(): Observable<NodeInfoVersions>
+
+  // Returns a Observable of changes, including existing files
+  watchAll(): Observable<NodeInfoVersions>
 
   // Returns all files in the database
   allFiles(): Promise<{ path: string; nodeInfos: NodeInfo[] }[]>

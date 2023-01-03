@@ -26,10 +26,10 @@
   },
   "scripts": {
     "build:tsc-watch": "tsc -w",
-    "build:nodemon": "nodemon build/index.js",
-    "server": "nodemon build/server/server.js",
-    "nodemon2": "nodemon build/index.js -p /tmp/sync2",
-    "start": "npm-run-all -p build:*",
+    "build:client": "nodemon build/client/client.js",
+    "build:server": "nodemon build/server/server.js",
+    "client2": "nodemon build/client/client.js -p /tmp/sync2",
+    "start": "npm-run-all -p build:tsc-watch build:client",
     "test": "jest"
   }
 }

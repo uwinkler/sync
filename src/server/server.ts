@@ -1,11 +1,13 @@
 import { filter, Observable, share, Subject } from 'rxjs'
 import { Server } from 'socket.io'
+import { Message } from '../common/types'
 import { jsonDb } from '../db/json.db'
 import { fsStore } from '../storage/fs/fs.storage'
 import { logger } from '../utils/logger'
-import { ControllerCtx, Message } from './controller.type'
-import { publishFileList } from './publish-file-list.ctrl'
-import { updateFromClient } from './update-from-client.ctrl'
+import { clientToServerSync } from './client-to-server-sync.ctrl'
+import { ControllerCtx } from './controller.type'
+import { download } from './download.ctrl'
+import { serverToClientSync } from './server-to-client-sync.ctrl'
 import { upload } from './upload.ctrl'
 
 const SERVER_DB = '/tmp/sync_server/server_db.json'
@@ -32,9 +34,10 @@ function init() {
   }
 
   debugMessages()
-  publishFileList(ctx)
+  serverToClientSync(ctx)
+  clientToServerSync(ctx)
   upload(ctx)
-  updateFromClient(ctx)
+  download(ctx)
   initIo()
 }
 

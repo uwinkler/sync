@@ -1,7 +1,13 @@
 import fs from 'fs'
 import path from 'path'
-import { Ok, PathAbsolute, PathRelative, Url, Version } from '../../types'
-import { fsCopyFile, fsExists, fsUtimes, isDir, mkDir } from '../../utils-fs'
+import { Ok, PathAbsolute, PathRelative, Version } from '../../types'
+import {
+  fsCopyFile,
+  fsExists,
+  fsUtimes,
+  isDir,
+  mkDir
+} from '../../utils/utils-fs'
 import { dirHash, fileHash } from '../../utils/fileHash'
 import { logger } from '../../utils/logger'
 import type { StorageFactory } from '../storage.types'
@@ -47,26 +53,25 @@ async function storeFile(
   pathRel: PathRelative,
   version: Version
 ) {
-  log.debug('➡️  storeFile:', pathRel, version)
-  const { destDir, dest } = chunk({ pathToStore, pathRel, version })
-
-  if (!(await isDir(destDir))) {
-    log.debug('📂 storeFile: creating dir', destDir, '')
-    await mkDir(destDir)
-  }
-
-  const src = path.join(root, pathRel)
-
-  if (await fsExists(dest)) {
-    log.debug(`😑 storeFile: file ${dest} exists, ignoring`)
-  }
-
   try {
+    log.debug('➡️  storeFile:', pathRel, version)
+    const { destDir, dest } = chunk({ pathToStore, pathRel, version })
+
+    if (!(await isDir(destDir))) {
+      log.debug('📂 storeFile: creating dir', destDir, '')
+      await mkDir(destDir)
+    }
+
+    const src = path.join(root, pathRel)
+
+    if (await fsExists(dest)) {
+      log.debug(`😑 storeFile: file ${dest} exists, ignoring`)
+    }
+
     log.debug(`📄 storeFile: copying ${src} to ${dest}`)
     await fsCopyFile(src, dest, fs.constants.COPYFILE_FICLONE)
   } catch (err) {
     log.error('🚨 storeFile', err)
-    throw err
   }
 }
 
@@ -94,7 +99,6 @@ async function storeBuffer(props: {
     return fs.promises.writeFile(dest, data)
   } catch (err) {
     log.error('🚨 storeBuffer', err)
-    throw err
   }
 }
 
@@ -109,8 +113,13 @@ async function hasFile({
   pathRel: PathRelative
   version: Version
 }): Promise<boolean> {
-  const { dest } = chunk({ pathToStore, pathRel, version })
-  return await fsExists(dest)
+  try {
+    const { dest } = chunk({ pathToStore, pathRel, version })
+    return await fsExists(dest)
+  } catch (err) {
+    log.error('🚨 hasFile', err)
+    throw err
+  }
 }
 
 async function restoreFile(
@@ -120,13 +129,12 @@ async function restoreFile(
   version: Version
 ) {
   const { dest: src } = chunk({ pathToStore, pathRel, version })
-  const dest = path.join(root, pathRel)
-
-  if (!hasFile({ pathToStore, pathRel, version })) {
-    log.warn('restoreFile', `File ${pathRel} not found in storage`)
-    throw new Error(`File ${pathRel} not found in storage`)
-  }
   try {
+    const dest = path.join(root, pathRel)
+    if (!hasFile({ pathToStore, pathRel, version })) {
+      log.warn('restoreFile', `File ${pathRel} not found in storage`)
+      throw new Error(`File ${pathRel} not found in storage`)
+    }
     const time = new Date(Number(version))
     log.info('restoreFile', version, src, dest, time)
     await mkDir(path.dirname(dest))
@@ -134,7 +142,7 @@ async function restoreFile(
     await fsCopyFile(src, dest, fs.constants.COPYFILE_FICLONE)
     await fsUtimes(dest, time, time)
   } catch (err) {
-    log.error('🚨 restoreFile', err)
+    log.error('🚨 restoreFile', pathRel, version, err)
     throw err
   }
 }
@@ -146,7 +154,12 @@ async function getFile(props: {
 }) {
   const { pathToStore, pathRel, version } = props
   const { dest } = chunk({ pathToStore, pathRel, version: '' + version })
-  return await fs.promises.readFile(dest)
+  try {
+    return await fs.promises.readFile(dest)
+  } catch (err) {
+    log.error('🚨 getFile', pathRel, version, err)
+    throw err
+  }
 }
 
 // Helpers

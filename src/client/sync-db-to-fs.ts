@@ -1,11 +1,11 @@
 import path from 'path'
 import { debounceTime, scan } from 'rxjs'
-import { Database } from './db/db.types'
-import { Storage } from './storage/storage.types'
-import { PathAbsolute } from './types'
-import { fsExists, fsStat, fsUnlink } from './utils-fs'
-import { logger } from './utils/logger'
-import { floor } from './utils/floor'
+import { Database } from '../db/db.types'
+import { Storage } from '../storage/storage.types'
+import { PathAbsolute } from '../types'
+import { fsExists, fsStat, fsUnlink } from '../utils/utils-fs'
+import { logger } from '../utils/logger'
+import { floor } from '../utils/floor'
 
 const log = logger(__filename)
 
@@ -17,9 +17,8 @@ export function syncDbToFs(props: {
   db: Database<unknown>
   storage: Storage<unknown>
 }) {
-  const files$ = props.db.watch()
-
   async function syncAllFiles() {
+    const files$ = props.db.watchAll()
     // Count files
     files$
       .pipe(

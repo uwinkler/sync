@@ -2,7 +2,8 @@ import bunyan from 'bunyan'
 import bunyanFormat from 'bunyan-format'
 
 const formatOutputStream = bunyanFormat({
-  outputMode: 'short'
+  outputMode: 'short',
+  levelInString: true
 })
 
 const nameFromPath = (name: string) => {

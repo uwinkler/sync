@@ -1,10 +1,9 @@
 import { filter, Observable, share, Subject } from 'rxjs'
 import { io } from 'socket.io-client'
-import { logger } from '../utils/logger'
+import { logger } from '../../utils/logger'
 
 const log = logger(__filename)
 
-export type PublishFile = { path: string; mtime: number; data: Buffer }
 export type SocketClient = ReturnType<typeof socketClient>
 export type SocketClientConfig = { server: string }
 export type SocketMessage<T> = { event: string; payload: T }
@@ -45,22 +44,11 @@ export const socketClient = (config: SocketClientConfig) => {
     })
   }
 
-  function publishFile(props: PublishFile) {
-    const { path, mtime, data } = props
-    socket.emit('publish_file', { path, mtime, data })
-  }
-
-  function publishFileList(props: { path: string; mtime: number }[]) {
-    log.debug('publishFileList', props)
-    socket.emit('publish_file_list', props)
-  }
-
   init()
 
   return {
-    publishFile,
-    publishFileList,
     watch,
+    socket,
     connectionState: socketConnectionState.pipe(share())
   }
 }

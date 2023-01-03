@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import { logger } from './utils/logger'
+import { logger } from './logger'
 const log = logger(__filename)
 
 export const stat = fs.promises.stat
