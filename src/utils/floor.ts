@@ -1,4 +1,4 @@
-const DELTA = 1000
+const DELTA = 100
 
 export function floor(num: number) {
   return Math.floor(num / DELTA) * DELTA

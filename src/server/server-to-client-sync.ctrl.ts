@@ -24,8 +24,9 @@ export const serverToClientSync: Controller = ({ watch, db, io }) => {
       log.debug('serverToClientSync request: ', msg.payload.files)
       const myFiles = (await db.allFiles()).map((f) => f.nodeInfos).flat()
       const clientFiles = msg.payload.files
+      const { client } = msg.payload
 
-      filesClientWants({ myFiles, clientFiles, msg })
+      filesClientWants({ myFiles, clientFiles, msg, client })
       filesServerWant({ myFiles, clientFiles, msg })
     } catch (err) {
       log.error('serverToClientSync error:', err)
@@ -74,22 +75,24 @@ export const serverToClientSync: Controller = ({ watch, db, io }) => {
   function filesClientWants({
     myFiles,
     clientFiles,
-    msg
+    msg,
+    client
   }: {
     myFiles: NodeInfo[]
     clientFiles: ClientFiles
     msg: Message<ServerToClientSync>
+    client: string
   }) {
     const myFileSet = new Set<string>()
     myFiles.forEach((f) => myFileSet.add(f.path + '_' + f.mtime))
     clientFiles.forEach((f) => myFileSet.delete(f.path + '_' + f.mtime))
     const clientNeeds = myFiles
       .filter((f) => myFileSet.has(f.path + '_' + f.mtime))
-      .map((f) => ({ path: f.path, mtime: f.mtime }))
+      .map((f) => ({ path: f.path, mtime: f.mtime, deleted: f.deleted }))
 
     if (clientNeeds.length > 0) {
       const resp: ServerToClientSyncResponse = {
-        client: '__all__',
+        client,
         youMayWant: clientNeeds
       }
 

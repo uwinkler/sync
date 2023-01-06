@@ -101,7 +101,7 @@ export function syncFsToDb(props: {
     const info: NodeInfo = {
       path: normalizePath(path, props.pathToWatch),
       type: 'file',
-      mtime: Date.now() + 1,
+      mtime: floor(Date.now()) + 1, // So it's newer than the file in all cases
       deleted: true
     }
     db.putInfo({ path: info.path, nodeInfo: info })

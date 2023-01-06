@@ -26,8 +26,10 @@ export const socketClient = (config: SocketClientConfig) => {
     socket.onAny((event, ...args) => {
       if (args.length === 1) {
         messages.next({ event, payload: args[0] })
+        trace(event, args[0])
       } else {
         messages.next({ event, payload: args })
+        trace(event, args)
       }
     })
 

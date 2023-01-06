@@ -40,8 +40,8 @@ export const upload: Controller = (ctx) => {
 
       // inform the other clients that we have a new file
       const newFile: ServerToClientSyncResponse = {
-        client: msg.payload.client,
-        youMayWant: [{ path, mtime }]
+        client: '__all__',
+        youMayWant: [{ path, mtime, deleted: false }]
       }
 
       io.sockets.sockets

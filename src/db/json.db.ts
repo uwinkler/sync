@@ -31,9 +31,10 @@ export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
       return new Promise((resolve) => {
         const { path, nodeInfo } = props
         const nodeInfoArr = map.get(path) || []
+
         if (nodeInfoArr.some((info) => info.mtime === nodeInfo.mtime)) {
           log.debug('putInfo: already exists', path, nodeInfo.mtime)
-          return sendLastToWatcher(nodeInfoArr)
+          return
         }
 
         const nextNodeInfoArr = [...nodeInfoArr, nodeInfo].sort(
@@ -41,8 +42,8 @@ export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
         )
         log.debug('putInfo: Store file info', path, nodeInfo.mtime)
         map.set(path, nextNodeInfoArr)
-        sendLastToWatcher(nextNodeInfoArr)
         writeFile.next(void 0)
+        sendLastToWatcher(nextNodeInfoArr)
         resolve(void 0)
       })
     },

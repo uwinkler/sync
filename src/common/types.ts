@@ -10,6 +10,7 @@ export type ServerToClientSync = {
   files: {
     path: string
     mtime: number
+    deleted: boolean
   }[]
 }
 export const SERVER_TO_CLIENT_SYNC = 'SERVER_TO_CLIENT_SYNC'
@@ -18,6 +19,7 @@ export type ServerToClientSyncResponse = {
   youMayWant: {
     path: string
     mtime: number
+    deleted: boolean
   }[]
 }
 export const SERVER_TO_CLIENT_SYNC_RESP = 'SERVER_TO_CLIENT_SYNC_RESP'
