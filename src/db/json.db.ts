@@ -1,20 +1,11 @@
 import fs from 'fs'
+import path from 'path'
 import { debounceTime, ReplaySubject, share, Subject } from 'rxjs'
 import { NodeInfo, NodeInfoVersions, PathRelative } from '../types'
 import { logger } from '../utils/logger'
 import { DatabaseFactory } from './db.types'
 
-// const socket = io('ws://localhost:3000')
-
 const log = logger(__filename)
-
-// socket.on('connect', () => {
-//   log.debug('Socket connected')
-// })
-
-// socket.on('*', (data) => {
-//   log.debug('socket.on', data)
-// })
 
 export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
   const { pathToStorage } = props
@@ -107,6 +98,12 @@ export const jsonDb: DatabaseFactory<{ pathToStorage: string }> = (props) => {
 function readMapFromFile(pathToStorage: string) {
   const map = new Map<string, NodeInfo[]>()
   log.debug('init: pathToStorage', pathToStorage)
+  const dirName = path.dirname(pathToStorage)
+
+  if (!fs.existsSync(dirName)) {
+    fs.mkdirSync(dirName)
+  }
+
   if (!fs.existsSync(pathToStorage)) {
     fs.writeFileSync(pathToStorage, JSON.stringify({}))
   }

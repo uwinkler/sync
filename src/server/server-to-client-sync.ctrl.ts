@@ -55,6 +55,7 @@ export const serverToClientSync: Controller = ({ watch, db, io }) => {
       )
 
       const clientToServerSyncResponse: ClientToServerSyncResponse = {
+        client: msg.payload.client,
         pleaseGiveMe: filesServerWant
       }
 
@@ -88,6 +89,7 @@ export const serverToClientSync: Controller = ({ watch, db, io }) => {
 
     if (clientNeeds.length > 0) {
       const resp: ServerToClientSyncResponse = {
+        client: '__all__',
         youMayWant: clientNeeds
       }
 

@@ -16,19 +16,21 @@ import {
   UPLOAD_REQUEST
 } from '../common/types'
 import { Database } from '../db/db.types'
-import { SocketClient } from './socket-client/socket-client'
 import { Storage } from '../storage/storage.types'
 import { logger } from '../utils/logger'
+import { SocketClient } from './socket-client/socket-client'
+
 const log = logger(__filename)
 
 type Props = {
-  socketClient: SocketClient
   db: Database<unknown>
+  name: string
+  socketClient: SocketClient
   storage: Storage<unknown>
 }
 
 export function syncNetwork(props: Props) {
-  const { db, socketClient, storage } = props
+  const { db, socketClient, storage, name } = props
 
   return {
     syncWithNetwork() {
@@ -53,13 +55,14 @@ export function syncNetwork(props: Props) {
           })
         })
         const request: ServerToClientSync = {
+          client: name,
           files
         }
         log.debug(
           'serverToClientSync request: these are my file (full list):',
           request
         )
-        socketClient.socket.emit(SERVER_TO_CLIENT_SYNC, request)
+        socketClient.emit(SERVER_TO_CLIENT_SYNC, request)
       })
 
     socketClient
@@ -68,12 +71,24 @@ export function syncNetwork(props: Props) {
         map((msg) => msg.payload.youMayWant),
         mergeMap((files) => files.map((i) => i)) // emit a file at a time
       )
-      .subscribe((file) => {
-        const req: DownloadRequest = {
+      .subscribe(async (file) => {
+        // check if we have the file already
+        const hasFile = await storage.hasFile({
           path: file.path,
-          mtime: file.mtime
+          version: '' + file.mtime
+        })
+
+        if (!hasFile) {
+          log.debug('serverToClientSync: I need to download this file:', file)
+          const req: DownloadRequest = {
+            client: name,
+            path: file.path,
+            mtime: file.mtime
+          }
+          socketClient.emit(DOWNLOAD_REQUEST, req)
+        } else {
+          log.debug('serverToClientSync: I already have this file:', file)
         }
-        socketClient.socket.emit(DOWNLOAD_REQUEST, req)
       })
 
     socketClient
@@ -104,9 +119,10 @@ export function syncNetwork(props: Props) {
           .map((e) => ({ path: e.path, mtime: e.mtime }))
 
         const req: ClientToServerSync = {
+          client: name,
           files
         }
-        socketClient.socket.emit(CLIENT_TO_SERVER_SYNC, req)
+        socketClient.emit(CLIENT_TO_SERVER_SYNC, req)
       })
   }
 
@@ -122,8 +138,13 @@ export function syncNetwork(props: Props) {
           const { path, mtime } = missingVersion
           try {
             storage.getFile({ path, version: '' + mtime }).then((data) => {
-              const uploadRequest: UploadRequest = { path, mtime, data }
-              socketClient.socket.emit(UPLOAD_REQUEST, uploadRequest)
+              const uploadRequest: UploadRequest = {
+                client: name,
+                path,
+                mtime,
+                data
+              }
+              socketClient.emit(UPLOAD_REQUEST, uploadRequest)
             })
           } catch (e) {
             log.error('Error while getting file', e)

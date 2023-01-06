@@ -21,7 +21,12 @@ export const download: Controller = (ctx) => {
     }
 
     const data = await storage.getFile({ path, version: '' + mtime })
-    const resp: DownloadResponse = { path, mtime, data }
+    const resp: DownloadResponse = {
+      path,
+      client: msg.payload.client,
+      mtime,
+      data
+    }
 
     io.to(msg.source).emit(DOWNLOAD_RESPONSE, resp)
   })

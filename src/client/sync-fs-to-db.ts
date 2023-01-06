@@ -17,13 +17,13 @@ export const fsExists = promisify(fs.exists)
 
 // Watches the filesystem and syncs the files to the database
 export function syncFsToDb(props: {
-  eventSource: Subject<FileEvent>
   pathToWatch: PathAbsolute
   storage: Storage<unknown>
   db: Database<unknown>
   socketClient: SocketClient
 }) {
-  const { eventSource, storage, db } = props
+  const { storage, db } = props
+  const eventSource = new Subject<FileEvent>()
 
   function watch() {
     log.debug('startWatcher')

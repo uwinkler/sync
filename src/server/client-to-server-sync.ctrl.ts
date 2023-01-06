@@ -31,9 +31,11 @@ const handleClientToServerSyncRequest =
     const requestVersions = clientFiles.filter((clientFile) => {
       const { path, mtime } = clientFile
       const myVersion = myFiles.find((f) => f.path === path)
+
       if (!myVersion) {
         return true
       }
+
       const hasVersion = myVersion.nodeInfos.some((e) => e.mtime === mtime)
 
       if (hasVersion) {
@@ -46,14 +48,12 @@ const handleClientToServerSyncRequest =
       return
     }
 
-    log.debug(
-      'clientToServerSync: server needs these versions:',
-      requestVersions
-    )
-
     const resp: ClientToServerSyncResponse = {
+      client: msg.payload.client,
       pleaseGiveMe: requestVersions
     }
+
+    log.debug('clientToServerSync: server needs these versions:', resp)
 
     io.to(msg.source).emit(CLIENT_TO_SERVER_SYNC_RESP, resp)
   }

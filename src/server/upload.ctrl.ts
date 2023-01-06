@@ -1,5 +1,4 @@
 import {
-  CLIENT_TO_SERVER_SYNC_RESP,
   ServerToClientSyncResponse,
   SERVER_TO_CLIENT_SYNC_RESP,
   UploadRequest,
@@ -41,12 +40,13 @@ export const upload: Controller = (ctx) => {
 
       // inform the other clients that we have a new file
       const newFile: ServerToClientSyncResponse = {
+        client: msg.payload.client,
         youMayWant: [{ path, mtime }]
       }
 
       io.sockets.sockets
         .get(msg.source)
-        ?.emit(SERVER_TO_CLIENT_SYNC_RESP, newFile)
+        ?.broadcast.emit(SERVER_TO_CLIENT_SYNC_RESP, newFile)
     } else {
       log.warn('file exists in db', path, mtime)
     }

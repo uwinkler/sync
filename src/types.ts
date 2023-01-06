@@ -43,11 +43,6 @@ export type NodeInfoVersions = {
   versions: NodeInfo[]
 }
 
-export type Config = {
-  path: string
-  server: string
-}
-
 export type PathAbsolute = string
 export type PathRelative = string
 export type Version = string
