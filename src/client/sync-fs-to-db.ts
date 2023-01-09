@@ -3,13 +3,14 @@ import fs from 'node:fs'
 
 import { filter, from, mergeMap, Subject } from 'rxjs'
 import { promisify } from 'util'
+import { NodeInfo, PathAbsolute } from '../common/types'
 import type { Database } from '../db/db.types'
-import type { SocketClient } from './socket-client/socket-client'
 import type { Storage } from '../storage/storage.types'
-import type { FileEvent, NodeInfo, PathAbsolute } from '../types'
-import { isFile, normalizePath } from '../utils/utils-fs'
+import { FileEvent } from '../types'
 import { floor } from '../utils/floor'
 import { logger } from '../utils/logger'
+import { isFile, normalizePath } from '../utils/utils-fs'
+import type { SocketClient } from './socket-client/socket-client'
 export const log = logger(__filename)
 
 const fsStat = promisify(fs.stat)
@@ -17,12 +18,13 @@ export const fsExists = promisify(fs.exists)
 
 // Watches the filesystem and syncs the files to the database
 export function syncFsToDb(props: {
+  clientName: string
   pathToWatch: PathAbsolute
   storage: Storage<unknown>
   db: Database<unknown>
   socketClient: SocketClient
 }) {
-  const { storage, db } = props
+  const { storage, db, clientName } = props
   const eventSource = new Subject<FileEvent>()
 
   function watch() {
@@ -41,10 +43,10 @@ export function syncFsToDb(props: {
   async function nodeInfo(path: PathAbsolute): Promise<NodeInfo> {
     const stats = await fsStat(path)
     return {
+      client: clientName,
       path: normalizePath(path, props.pathToWatch),
       mtime: floor(stats.mtimeMs),
-      deleted: false,
-      type: stats.isFile() ? 'file' : 'dir'
+      deleted: false
     }
   }
 
@@ -99,8 +101,8 @@ export function syncFsToDb(props: {
   async function unlinkFile(path: string) {
     log.debug('unlinkFile', path)
     const info: NodeInfo = {
+      client: clientName,
       path: normalizePath(path, props.pathToWatch),
-      type: 'file',
       mtime: floor(Date.now()) + 1, // So it's newer than the file in all cases
       deleted: true
     }

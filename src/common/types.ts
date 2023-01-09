@@ -19,6 +19,7 @@ export type ServerToClientSyncResponse = {
   youMayWant: {
     path: string
     mtime: number
+    fromClient: string
     deleted: boolean
   }[]
 }
@@ -68,3 +69,21 @@ export type Message<T> = {
   payload: T
   source: string
 }
+
+export type NodeInfo = {
+  client: string
+  path: string
+  deleted: boolean
+  mtime: number
+  localMtime?: number
+}
+
+export type NodeInfoVersions = {
+  path: string
+  versions: NodeInfo[]
+}
+
+export type PathAbsolute = string
+export type PathRelative = string
+export type Version = string
+export type Url = string

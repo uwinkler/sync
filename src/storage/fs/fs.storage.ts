@@ -1,6 +1,9 @@
 import fs from 'fs'
 import path from 'path'
-import { Ok, PathAbsolute, PathRelative, Version } from '../../types'
+import { PathAbsolute, PathRelative, Version } from '../../common/types'
+import { Ok } from '../../types'
+import { dirHash, fileHash } from '../../utils/fileHash'
+import { logger } from '../../utils/logger'
 import {
   fsCopyFile,
   fsExists,
@@ -8,8 +11,6 @@ import {
   isDir,
   mkDir
 } from '../../utils/utils-fs'
-import { dirHash, fileHash } from '../../utils/fileHash'
-import { logger } from '../../utils/logger'
 import type { StorageFactory } from '../storage.types'
 
 const log = logger(__filename)

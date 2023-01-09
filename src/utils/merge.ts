@@ -1,4 +1,4 @@
-import { NodeInfo } from '../types'
+import { NodeInfo } from '../common/types'
 
 export function merge(arr1: NodeInfo[], arr2: NodeInfo[]) {
   const map = new Map<number, NodeInfo>()

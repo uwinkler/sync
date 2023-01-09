@@ -150,11 +150,6 @@ test('delete-file-two-clients', async () => {
           },
           {
             path: 'foo.txt',
-            mtime: 0,
-            deleted: false
-          },
-          {
-            path: 'foo.txt',
             mtime: 1,
             deleted: true
           }

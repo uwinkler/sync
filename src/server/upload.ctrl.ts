@@ -18,8 +18,8 @@ export const upload: Controller = (ctx) => {
     const hasFile = await storage.hasFile({ path, version: '' + mtime })
 
     if (!hasFile) {
-      log.debug('store new file', path, mtime)
       await storage.storeBuffer({ path, version: '' + mtime, data })
+      log.debug('store new file', path, mtime)
     } else {
       log.warn('file exists', path, mtime)
     }
@@ -31,8 +31,8 @@ export const upload: Controller = (ctx) => {
       db.putInfo({
         path,
         nodeInfo: {
+          client: msg.payload.client,
           mtime,
-          type: 'file',
           deleted: false,
           path
         }
@@ -41,7 +41,14 @@ export const upload: Controller = (ctx) => {
       // inform the other clients that we have a new file
       const newFile: ServerToClientSyncResponse = {
         client: '__all__',
-        youMayWant: [{ path, mtime, deleted: false }]
+        youMayWant: [
+          {
+            fromClient: msg.payload.client,
+            path,
+            mtime,
+            deleted: false
+          }
+        ]
       }
 
       io.sockets.sockets

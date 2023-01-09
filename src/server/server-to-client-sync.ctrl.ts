@@ -2,12 +2,12 @@ import {
   ClientToServerSyncResponse,
   CLIENT_TO_SERVER_SYNC_RESP,
   Message,
+  NodeInfo,
   ServerToClientSync,
   ServerToClientSyncResponse,
   SERVER_TO_CLIENT_SYNC,
   SERVER_TO_CLIENT_SYNC_RESP
 } from '../common/types'
-import { NodeInfo } from '../types'
 import { logger } from '../utils/logger'
 import { Controller } from './controller.type'
 
@@ -88,7 +88,12 @@ export const serverToClientSync: Controller = ({ watch, db, io }) => {
     clientFiles.forEach((f) => myFileSet.delete(f.path + '_' + f.mtime))
     const clientNeeds = myFiles
       .filter((f) => myFileSet.has(f.path + '_' + f.mtime))
-      .map((f) => ({ path: f.path, mtime: f.mtime, deleted: f.deleted }))
+      .map((f) => ({
+        fromClient: f.client,
+        path: f.path,
+        mtime: f.mtime,
+        deleted: f.deleted
+      }))
 
     if (clientNeeds.length > 0) {
       const resp: ServerToClientSyncResponse = {

@@ -3,7 +3,7 @@ import { Storage } from '../storage/storage.types'
 import { SocketClient } from './socket-client/socket-client'
 
 export type Context = {
-  clientName̵: string
+  clientName: string
   db: Database<unknown>
   pathToStore: string
   pathToWatch: string

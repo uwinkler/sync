@@ -78,7 +78,7 @@ function fireUpClient(
   const clientPathToWatch = createTempDir(`tb-client-watch-${name}`)
 
   const clientContext: Context = {
-    name: `client-${name}`,
+    clientName: `client-${name}`,
     pathToStore: clientPathToStore,
     pathToWatch: clientPathToWatch,
     storage: fsStore({ pathToStore: clientPathToStore }),

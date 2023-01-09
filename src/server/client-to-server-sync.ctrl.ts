@@ -71,7 +71,12 @@ const handleFilesTheServerNeeds =
 const handleDeletedFiles =
   (ctx: ControllerCtx) => async (msg: Message<ClientToServerSync>) => {
     const { db, io } = ctx
-    const deletedFiles = msg.payload.files.filter((f) => f.deleted)
+    const deletedFiles = msg.payload.files
+      .filter((f) => f.deleted)
+      .map((deletedFile) => ({
+        ...deletedFile,
+        fromClient: msg.payload.client
+      }))
 
     if (deletedFiles.length === 0) {
       return
@@ -81,8 +86,8 @@ const handleDeletedFiles =
       await db.putInfo({
         path: file.path,
         nodeInfo: {
+          client: msg.payload.client,
           path: file.path,
-          type: 'file',
           mtime: file.mtime,
           deleted: true
         }

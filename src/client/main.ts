@@ -21,7 +21,7 @@ const opts = program
 const pathToStore = path.normalize(opts.storage)
 
 const CONTEXT: Context = {
-  name: opts.name,
+  clientName̵: opts.name,
   pathToStore,
   pathToWatch: path.normalize(opts.path),
   storage: fsStore({ pathToStore }),

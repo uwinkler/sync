@@ -23,14 +23,14 @@ import { SocketClient } from './socket-client/socket-client'
 const log = logger(__filename)
 
 type Props = {
-  clientName̵: string
+  clientName: string
   db: Database<unknown>
   socketClient: SocketClient
   storage: Storage<unknown>
 }
 
 export function syncNetwork(props: Props) {
-  const { db, socketClient, storage, clientName̵ } = props
+  const { db, socketClient, storage, clientName } = props
 
   return {
     syncWithNetwork() {
@@ -55,7 +55,7 @@ export function syncNetwork(props: Props) {
           })
         })
         const request: ServerToClientSync = {
-          client: clientName̵,
+          client: clientName,
           files
         }
         log.debug(
@@ -77,7 +77,7 @@ export function syncNetwork(props: Props) {
           return await db.putInfo({
             path: file.path,
             nodeInfo: {
-              type: 'file',
+              client: file.fromClient,
               path: file.path,
               mtime: file.mtime,
               deleted: true
@@ -94,7 +94,7 @@ export function syncNetwork(props: Props) {
         if (!hasFile) {
           log.debug('serverToClientSync: I need to download this file:', file)
           const req: DownloadRequest = {
-            client: clientName̵,
+            client: clientName,
             path: file.path,
             mtime: file.mtime
           }
@@ -111,7 +111,12 @@ export function syncNetwork(props: Props) {
         await storage.storeBuffer({ path, version: '' + mtime, data })
         await db.putInfo({
           path,
-          nodeInfo: { type: 'file', path, mtime, deleted: false }
+          nodeInfo: {
+            client: clientName,
+            path,
+            mtime,
+            deleted: false
+          }
         })
       })
   }
@@ -126,15 +131,18 @@ export function syncNetwork(props: Props) {
         map((ev) => ev.map((e) => e.versions)),
         map(flatMap((versions) => versions))
       )
-      .subscribe((events) => {
-        const files = events.map((e) => ({
-          path: e.path,
-          mtime: e.mtime,
-          deleted: e.deleted
-        }))
+      .subscribe((versions) => {
+        log.debug('watchDatabaseAndPublishFileList: new versions:', versions)
+        const files = versions
+          .filter((version) => version.client == clientName)
+          .map((e) => ({
+            path: e.path,
+            mtime: e.mtime,
+            deleted: e.deleted
+          }))
 
         const req: ClientToServerSync = {
-          client: clientName̵,
+          client: clientName,
           files
         }
         socketClient.emit(CLIENT_TO_SERVER_SYNC, req)
@@ -154,7 +162,7 @@ export function syncNetwork(props: Props) {
           try {
             storage.getFile({ path, version: '' + mtime }).then((data) => {
               const uploadRequest: UploadRequest = {
-                client: clientName̵,
+                client: clientName,
                 path,
                 mtime,
                 data

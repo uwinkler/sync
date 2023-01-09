@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import path from 'path'
-import { PathRelative, Version } from '../types'
+import { PathRelative, Version } from '../common/types'
 
 export function dirHash(input: string) {
   return crypto

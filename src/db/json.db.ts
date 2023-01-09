@@ -1,7 +1,8 @@
 import fs from 'fs'
 import path from 'path'
 import { debounceTime, ReplaySubject, share, Subject } from 'rxjs'
-import { NodeInfo, NodeInfoVersions, PathRelative } from '../types'
+import { NodeInfo, NodeInfoVersions, PathRelative } from '../common/types'
+
 import { logger } from '../utils/logger'
 import { DatabaseFactory } from './db.types'
 

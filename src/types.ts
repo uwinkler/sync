@@ -30,20 +30,3 @@ export function Failure(message: string): Failure {
 
 export type Maybe<T = undefined> = Ok<T> | Failure
 
-export type NodeInfo = {
-  type: 'file' | 'dir'
-  path: string
-  deleted: boolean
-  mtime: number
-  localMtime?: number
-}
-
-export type NodeInfoVersions = {
-  path: string
-  versions: NodeInfo[]
-}
-
-export type PathAbsolute = string
-export type PathRelative = string
-export type Version = string
-export type Url = string

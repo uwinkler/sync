@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { NodeInfo, NodeInfoVersions, PathRelative } from '../types'
+import { PathRelative, NodeInfo, NodeInfoVersions } from '../common/types'
 
 export type DatabaseFactory<T> = (config: T) => {
   // Stores information about a file or directory
